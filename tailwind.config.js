@@ -1,4 +1,5 @@
 module.exports = {
+<<<<<<< HEAD
   content: [
     "./pages/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
@@ -8,11 +9,20 @@ module.exports = {
       spacing: {
         "7.5": "1.875rem",
       },
+=======
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  theme: {
+    extend: {
+>>>>>>> 1e8d2f9... bug need fix
       container: {
         center: true,
         padding: {
           default: "1rem",
+<<<<<<< HEAD
           'md': "1.875rem",
+=======
+          md: "1.875rem",
+>>>>>>> 1e8d2f9... bug need fix
         },
       },
       colors: {
@@ -39,6 +49,7 @@ module.exports = {
       boxShadow: {
         DEFAULT: "0px 5px 4px rgba(0, 0, 0, 0.25)",
       },
+<<<<<<< HEAD
       fontSize: {
         "h1": ["3rem", "4rem"],
         "h2": ["2.25rem", "3.375rem"],
@@ -78,3 +89,38 @@ module.exports = {
     },
   },
 };
+=======
+    },
+    variants: {
+      extend: {
+        opacity: ["group-focus"],
+      },
+    },
+    plugins: [
+      require("@tailwindcss/typography"),
+      require("@tailwindcss/forms"),
+      require("@tailwindcss/line-clamp"),
+      require("tailwind-scrollbar"),
+      ({ addComponents }) => {
+        addComponents({
+          ".container": {
+            maxWidth: "100%",
+            "@screen sm": {
+              maxWidth: "540px",
+            },
+            "@screen md": {
+              maxWidth: "768px",
+            },
+            "@screen lg": {
+              maxWidth: "960px",
+            },
+            "@screen xl": {
+              maxWidth: "1200px",
+            },
+          },
+        });
+      },
+    ],
+  }
+};
+>>>>>>> 1e8d2f9... bug need fix
