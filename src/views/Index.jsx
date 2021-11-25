@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 
 
 
-function Index() {
+const Index =() =>{
   
   return (
     <main className="container-2xl bg-index">

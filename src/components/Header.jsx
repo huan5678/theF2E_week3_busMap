@@ -5,7 +5,7 @@ import { Menu } from './icons';
 
 const Header = () => {
   return (
-    <Header className="bg-white flex flex-between">
+    <header className="bg-white flex flex-between">
       <NavLink to="/">
         <Logo></Logo>
       </NavLink>
@@ -31,7 +31,7 @@ const Header = () => {
           </li>
         </ul>
       </nav>
-    </Header>
+    </header>
   );
 }
 
