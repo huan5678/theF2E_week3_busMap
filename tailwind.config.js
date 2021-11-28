@@ -5,11 +5,14 @@ module.exports = {
   ],
   theme: {
     extend: {
+      spacing: {
+        "7.5": "1.875rem",
+      },
       container: {
         center: true,
         padding: {
           default: "1rem",
-          md: "1.875rem",
+          'md': "1.875rem",
         },
       },
       colors: {
@@ -36,35 +39,42 @@ module.exports = {
       boxShadow: {
         DEFAULT: "0px 5px 4px rgba(0, 0, 0, 0.25)",
       },
-    },
-    variants: {
-      extend: {
-        opacity: ["group-focus"],
+      fontSize: {
+        "h1": ["3rem", "4rem"],
+        "h2": ["2.25rem", "3.375rem"],
+        "h3": ["1.75rem", "2.25rem"],
+        "h4": ["1.25rem", "1.875rem"],
+        "h5": ["0.875rem", "1.25rem"],
       },
-    },
-    plugins: [
-      require("@tailwindcss/typography"),
-      require("@tailwindcss/forms"),
-      require("tailwind-scrollbar"),
-      ({ addComponents }) => {
-        addComponents({
-          ".container": {
-            maxWidth: "100%",
-            "@screen sm": {
-              maxWidth: "540px",
-            },
-            "@screen md": {
-              maxWidth: "768px",
-            },
-            "@screen lg": {
-              maxWidth: "960px",
-            },
-            "@screen xl": {
-              maxWidth: "1200px",
-            },
-          },
-        });
+      variants: {
+        extend: {
+          opacity: ["group-focus"],
+        },
       },
-    ],
+      plugins: [
+        require("@tailwindcss/typography"),
+        require("@tailwindcss/forms"),
+        require("tailwind-scrollbar"),
+        ({ addComponents }) => {
+          addComponents({
+            ".container": {
+              maxWidth: "100%",
+              "@screen sm": {
+                maxWidth: "540px",
+              },
+              "@screen md": {
+                maxWidth: "768px",
+              },
+              "@screen lg": {
+                maxWidth: "960px",
+              },
+              "@screen xl": {
+                maxWidth: "1200px",
+              },
+            },
+          });
+        },
+      ],
+    },
   },
 };
