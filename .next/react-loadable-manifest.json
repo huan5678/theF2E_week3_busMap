@@ -1,0 +1,8 @@
+{
+  "index.js -> ../components/BG": {
+    "id": "./components/BG.jsx",
+    "files": [
+      "static/chunks/components_BG_jsx.js"
+    ]
+  }
+}
