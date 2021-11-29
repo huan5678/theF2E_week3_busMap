@@ -22,7 +22,7 @@ const requestOptions = () => {
 
 
 
-const fetchData = url => axios.get(`${url}`, {
+const fetchData = async url => await axios.get(`${url}`, {
     headers: requestOptions(),
   }).then(res => res.data);
 

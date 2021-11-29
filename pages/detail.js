@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense, useMemo, useLayoutEffect } from "react";
 import { useRouter } from "next/router";
 import useSWR from "swr";
 import fetchData from "../api/fetchData";
@@ -29,6 +29,9 @@ const Operator = (City) =>
 
 const Schedule = (RouteName, City) =>
   `https://ptx.transportdata.tw/MOTC/v2/Bus/Schedule/City/${City}/${RouteName}?$format=JSON`;
+
+
+
 
 function DynamicBusState(props) {
   return (
@@ -71,17 +74,33 @@ function DynamicBusState(props) {
   );
 }
 
-function BusInformation(){
-const router = useRouter();
+const BusInformation =()=> {
+
+  const router = useRouter();
   const { query } = router;
 
-  const { data: routeData, error: routeError } = useSWR(Route(query.name, query.city), fetchData);
+  const { data: routeData, error: routeError } = useSWR(
+    Route(query.name, query.city),
+    fetchData
+    , { suspense: true }
+  );
 
-  const { data: operatorData, error: operatorError } = useSWR(Operator(query.city), fetchData);
-  
-  const { data: scheduleData, error: scheduleError } = useSWR(Schedule(query.name, query.city), fetchData);
+  const { data: operatorData, error: operatorError } = useSWR(
+    Operator(query.city),
+    fetchData
+    , { suspense: true }
+  );
 
-  const [operatorInfo, setOperatorInfo] = useState({});
+  const { data: scheduleData, error: scheduleError } = useSWR(
+    Schedule(query.name, query.city),
+    fetchData,
+    { suspense: true }
+  );
+
+  const [operatorInfo, setOperatorInfo] = useState({
+    OperatorName: "",
+    OperatorPhone: "",
+  });
 
   const [frequency, setFrequency] = useState({
     NormalPeakMaxHeadwayMins: 0,
@@ -99,23 +118,18 @@ const router = useRouter();
     let frequencyNormalMinHeadwayMins = [];
     let frequencyHolidayMaxHeadwayMins = [];
     let frequencyHolidayMinHeadwayMins = [];
-
-    if (scheduleData === undefined || scheduleData[0].Frequencys === undefined) {
-      return;
-    } else {
-      scheduleData[0].Frequencys.forEach((freq) => {
-          if (
-            freq.ServiceDay.Sunday !== 1 ||
-            freq.ServiceDay.Saturday !== 1
-          ) {
-            frequencyNormalMaxHeadwayMins.push(freq.MaxHeadwayMins);
-            frequencyNormalMinHeadwayMins.push(freq.MinHeadwayMins);
-          } else {
-            frequencyHolidayMaxHeadwayMins.push(freq.MaxHeadwayMins);
-            frequencyHolidayMinHeadwayMins.push(freq.MinHeadwayMins);
-          }
-        });
-    }
+    
+     scheduleData[0].Frequencys === undefined
+       ? null
+       : scheduleData[0].Frequencys.forEach((freq) => {
+           if (freq.ServiceDay.Sunday === 1 || freq.ServiceDay.Saturday === 1) {
+             frequencyHolidayMaxHeadwayMins.push(freq.MaxHeadwayMins);
+             frequencyHolidayMinHeadwayMins.push(freq.MinHeadwayMins);
+            } else {
+             frequencyNormalMaxHeadwayMins.push(freq.MaxHeadwayMins);
+             frequencyNormalMinHeadwayMins.push(freq.MinHeadwayMins);
+           }
+         });
 
     const normalPeakMaxHeadwayMins = Math.min(...frequencyNormalMaxHeadwayMins);
     const normalPeakMinHeadwayMins = Math.min(...frequencyNormalMinHeadwayMins);
@@ -138,35 +152,33 @@ const router = useRouter();
       HolidayPeakOffMaxHeadwayMins: holidayPeakOffMaxHeadwayMins,
       HolidayPeakOffMinHeadwayMins: holidayPeakOffMinHeadwayMins,
     });
-
+    console.log(frequency);
   };
 
   const calcOperator = () => {
-    let resultArr = [];
-    operatorData !== undefined
-      ? routeData !== undefined
-          ? ( operatorData.map((item, idx) =>
-              item.OperatorID === routeData[0].Operators[0].OperatorID
-              ? resultArr.push(item) : null
-            ), setOperatorInfo(resultArr))
-          : null
-      : null;
+    let resultInfo = {
+      OperatorName: "",
+      OperatorPhone: "",
+    };
+    operatorData.map((item, idx) =>
+      item.OperatorID === routeData[0].Operators[0].OperatorID
+        ? ((resultInfo.OperatorName = item.OperatorName.Zh_tw),
+          (resultInfo.OperatorPhone = item.OperatorPhone))
+        : null
+    );
+    setOperatorInfo(resultInfo);
   };
-  
-  useEffect(() => {
+
+  useMemo(() => {
     calcOperator();
     calcFrequency();
-  }, []);
-  
-  useEffect(() => {
     console.log(routeData);
     console.log(operatorData);
-    console.log(operatorInfo);
     console.log(scheduleData);
     console.log(frequency);
-  },[routeData, operatorData, scheduleData, operatorInfo]);
-
-  return operatorInfo[0] === undefined || operatorInfo.length === 0 ? null : (
+    console.log(operatorInfo);
+  }, []);
+  return (
     <div className="container px-4">
       <div className="flex flex-wrap justify-between items-center gap-4">
         <Card className="bg-white space-y-3 w-full">
@@ -180,10 +192,8 @@ const router = useRouter();
           </h2>
           <p className="flex gap-1">
             <Bus className="fill-current" />
-            <span className="font-bold">
-              {operatorInfo[0].OperatorName.Zh_tw}
-            </span>
-            <span>{operatorInfo[0].OperatorPhone}</span>
+            <span className="font-bold">{operatorInfo.OperatorName}</span>
+            <span>{operatorInfo.OperatorPhone}</span>
           </p>
         </Card>
         <Card className="bg-white space-y-3 w-full">
@@ -205,23 +215,31 @@ const router = useRouter();
             <li className="flex gap-1">
               <span className="font-bold">首班車：</span>
               <span className="font-normal">
-                {(routeData.SubRoutes[0].FirstBusTime).slice(0, 2)}:{(routeData.SubRoutes[0].FirstBusTime).slice(2, 4)}
+                {routeData[0].SubRoutes[0].FirstBusTime.slice(0, 2)}:
+                {routeData[0].SubRoutes[0].FirstBusTime.slice(2, 4)}
               </span>
             </li>
             <li className="flex gap-1">
               <span className="font-bold">末班車：</span>
               <span className="font-normal">
-                {(routeData.SubRoutes[0].LastBusTime).slice(0, 2)}:{(routeData.SubRoutes[0].LastBusTime).slice(2, 4)}
+                {routeData[0].SubRoutes[0].LastBusTime.slice(0, 2)}:
+                {routeData[0].SubRoutes[0].LastBusTime.slice(2, 4)}
               </span>
             </li>
             <li className="flex gap-1">
               <span className="font-bold">尖峰班距：</span>
-              <span className="font-normal"></span>
+              <span className="font-normal">
+                {frequency.NormalPeakMinHeadwayMins}~
+                {frequency.NormalPeakMaxHeadwayMins}
+              </span>
               <span className="font-normal">分</span>
             </li>
             <li className="flex gap-1">
               <span className="font-bold">離峰班距：</span>
-              <span className="font-normal"></span>
+              <span className="font-normal">
+                {frequency.NormalPeakOffMinHeadwayMins}~
+                {frequency.NormalPeakOffMaxHeadwayMins}
+              </span>
               <span className="font-normal">分</span>
             </li>
           </ul>
@@ -234,23 +252,31 @@ const router = useRouter();
             <li className="flex gap-1">
               <span className="font-bold">首班車：</span>
               <span className="font-normal">
-                {(routeData.SubRoutes[0].HolidayFirstBusTime).slice(0,2)}:{(routeData.SubRoutes[0].HolidayFirstBusTime).slice(2,4)}
+                {routeData[0].SubRoutes[0].HolidayFirstBusTime.slice(0, 2)}:
+                {routeData[0].SubRoutes[0].HolidayFirstBusTime.slice(2, 4)}
               </span>
             </li>
             <li className="flex gap-1">
               <span className="font-bold">末班車：</span>
               <span className="font-normal">
-                {(routeData.SubRoutes[0].HolidayLastBusTime).slice(0,2)}:{(routeData.SubRoutes[0].HolidayLastBusTime).slice(2,4)}
+                {routeData[0].SubRoutes[0].HolidayLastBusTime.slice(0, 2)}:
+                {routeData[0].SubRoutes[0].HolidayLastBusTime.slice(2, 4)}
               </span>
             </li>
             <li className="flex gap-1">
               <span className="font-bold">尖峰班距：</span>
-              <span className="font-normal"></span>
+              <span className="font-normal">
+                {frequency.HolidayPeakMinHeadwayMins}~
+                {frequency.HolidayPeakMaxHeadwayMins}
+              </span>
               <span className="font-normal">分</span>
             </li>
             <li className="flex gap-1">
               <span className="font-bold">離峰班距：</span>
-              <span className="font-normal"></span>
+              <span className="font-normal">
+                {frequency.HolidayPeakOffMinHeadwayMins}~
+                {frequency.HolidayPeakOffMaxHeadwayMins}
+              </span>
               <span className="font-normal">分</span>
             </li>
           </ul>
@@ -266,19 +292,29 @@ const Detail = () => {
 
   const { data: realTimeFrequencyData, error: realTimeFrequencyError } = useSWR(
     RealTimeByFrequency(query.name, query.city),
-    fetchData
+    fetchData,
+    { suspense: true }
   );
   const {
     data: estimatedTimeOfArrivalData,
     error: EstimatedTimeOfArrivalError,
-  } = useSWR(estimatedTimeOfArrivalUrl(query.name, query.city), fetchData);
+  } = useSWR(estimatedTimeOfArrivalUrl(query.name, query.city), fetchData, {
+    suspense: true,
+  });
   const { data: displayStopOfRouteData, error: displayStopOfRouteError } =
-    useSWR(displayStopOfRoute(query.name, query.city), fetchData);
+    useSWR(displayStopOfRoute(query.name, query.city), fetchData, {
+      suspense: true,
+    });
   const { data: realTimeNearStopData, error: realTimeNearStopError } = useSWR(
     RealTimeNearStop(query.name, query.city),
-    fetchData
+    fetchData,
+    { suspense: true }
   );
-  const {data: vehicleData, error: vehicleError } = useSWR(Vehicle(query.city), fetchData);
+  const { data: vehicleData, error: vehicleError } = useSWR(
+    Vehicle(query.city),
+    fetchData,
+    { suspense: true }
+  );
 
 
 
@@ -290,13 +326,8 @@ const Detail = () => {
 
   const calcResult = () => {
     let resultArr = [];
-    realTimeNearStopData !== undefined
-      ? realTimeNearStopData !== undefined
-        ? (resultArr = realTimeFrequencyData.map((item, idx) =>
-            Object.assign({}, item, realTimeNearStopData[idx])
-          ))
-        : null
-      : null;
+    resultArr = realTimeFrequencyData.map((item, idx) =>
+            Object.assign({}, item, realTimeNearStopData[idx]));
     setResult(resultArr);
   };
 
@@ -306,6 +337,10 @@ const Detail = () => {
 
   const handleRoundTrip = (e) => {
     setRoundTrip(e);
+  };
+
+  const handlePageTurn = (e) => {
+    setPageSwitch(e);
   };
 
   return (
@@ -320,30 +355,42 @@ const Detail = () => {
               <h1 className="text-white font-bold text-h3">{query.name}</h1>
             </div>
             <div className="flex items-center ">
-              <button type="button" className="px-2 pt-2">
+              <button
+                type="button"
+                className="px-2 pt-2"
+                onClick={() => handlePageTurn("dynamic")}
+              >
                 <Stop className="fill-current text-white" />
               </button>
-              <button type="button" className="px-2 pt-2">
+              <button
+                type="button"
+                className="px-2 pt-2"
+                onClick={() => handlePageTurn("busInfo")}
+              >
                 <Info className="fill-current text-white" />
               </button>
-              <button type="button" className="px-2 pt-2">
+              <button
+                type="button"
+                className="px-2 pt-2"
+                onClick={() => handlePageTurn("map")}
+              >
                 <Map className="fill-current text-white" />
               </button>
             </div>
           </div>
         </div>
       </div>
-      { pageSwitch === 'dynamic' ? (
-      <DynamicBusState
-        query={query}
-        displayStopOfRouteData={displayStopOfRouteData}
-        roundTrip={roundTrip}
-        result={result}
-        handleRoundTrip={handleRoundTrip}
+      {pageSwitch === "dynamic" ? (
+        <DynamicBusState
+          query={query}
+          displayStopOfRouteData={displayStopOfRouteData}
+          roundTrip={roundTrip}
+          result={result}
+          handleRoundTrip={handleRoundTrip}
         ></DynamicBusState>
-      ) : null
-      }
-      <BusInformation />
+      ) : "busInfo" ? (
+        <BusInformation />
+      ) : null}
     </main>
   );
 };

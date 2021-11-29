@@ -36,12 +36,14 @@ export default function Home() {
   };
 
   let url = baseUrl(target, city);
-  const { data, error } = useSWR(url, fetchData);
+  const { data, error } = useSWR(url, fetchData, { suspense: true });
 
   let realTimeUrl = realTimeByFreq(city);
   const { data: realTimeData, error: realTimeError } = useSWR(
     realTimeUrl,
-    fetchData);
+    fetchData,
+    { suspense: true }
+  );
 
   console.log(realTimeData);
   console.log(data);
