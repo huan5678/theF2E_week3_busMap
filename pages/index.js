@@ -36,12 +36,14 @@ export default function Home() {
   };
 
   let url = baseUrl(target, city);
-  const { data, error } = useSWR(url, fetchData);
+  const { data, error } = useSWR(url, fetchData, { suspense: true });
 
   let realTimeUrl = realTimeByFreq(city);
   const { data: realTimeData, error: realTimeError } = useSWR(
     realTimeUrl,
-    fetchData);
+    fetchData,
+    { suspense: true }
+  );
 
   console.log(realTimeData);
   console.log(data);
@@ -161,9 +163,9 @@ export default function Home() {
             </div>
           </div>
         </Card>
-        <div className="container bg-gray-tr bg-blur rounded-2xl p-4">
-          {result !== undefined ? <ResultCard props={result} /> : null}
-        </div>
+        {result !== undefined ?
+          <ResultCard props={result} />
+        : null}
       </section>
     </BG>
   );
