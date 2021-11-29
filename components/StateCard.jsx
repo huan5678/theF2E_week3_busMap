@@ -23,27 +23,22 @@ const StateCard = ( props ) => {
 
   const [wayArr , setWayArr] = useState([]);
 
-  const [roundTrip, setRoundTrip] = useState(0);
-
   const [timer, setTimer] = useState(0);
 
   const handleTimer = () => {
     setTimeout(() => {
       setTimer(timer + 1);
     } , 60000);
-    if(timer === 6){
-      setTimer(0);
-    }
   };
 
   useEffect(() => {
     if (props.displayStopOfRouteData !== undefined) {
-      props.roundTrip === "to"
-        ? (setWayArr(props.displayStopOfRouteData[0].Stops), setRoundTrip(0))
-        : (setWayArr(props.displayStopOfRouteData[1].Stops), setRoundTrip(1));
+      props.roundTrip === 1
+        ? (setWayArr(props.displayStopOfRouteData[1].Stops))
+        : (setWayArr(props.displayStopOfRouteData[0].Stops));
     }
     handleTimer();
-  }, [roundTrip, props.displayStopOfRouteData, timer]);
+  }, [props.roundTrip, props.displayStopOfRouteData, timer]);
 
 
   if (props !== undefined) {
@@ -64,7 +59,7 @@ const StateCard = ( props ) => {
                     {props.result.map((bus, index) => {
                       if (
                         bus.StopSequence === item.StopSequence &&
-                        bus.Direction === roundTrip
+                        bus.Direction === props.roundTrip
                       ) {
                         return (
                           <div key={bus.PlateNumb}>
@@ -80,7 +75,7 @@ const StateCard = ( props ) => {
                     })}
                   </div>
                 </div>
-                {stopSequence(props.result, item, roundTrip) ? (
+                {stopSequence(props.result, item, props.roundTrip) ? (
                   <span className="text-center bg-primary text-white rounded-2xl px-2 py-1">
                     {item.StopSequence < 10
                       ? `0${item.StopSequence}`

@@ -1,9 +1,9 @@
-import searchBus from "../public/images/searchBus-fix.png";
-import nearbyStop from "../public/images/nearbyStop-fix.png";
-import navigation from "../public/images/navigation-fix.png";
-import searchBusMobile from '../public/images/searchBus-sm-fix.png';
-import nearbyStopMobile from "../public/images/nearbyStop-sm-fix.png";
-import navigationMobile from "../public/images/navigation-sm-fix.png";
+import searchBus from "../public/images/searchBus.png";
+import nearbyStop from "../public/images/nearbyStop.png";
+import navigation from "../public/images/navigation.png";
+import searchBusMobile from '../public/images/searchBus-sm.png';
+import nearbyStopMobile from "../public/images/nearbyStop-sm.png";
+import navigationMobile from "../public/images/navigation-sm.png";
 
 
 const BG = ( props ) => {

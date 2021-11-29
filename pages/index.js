@@ -161,9 +161,9 @@ export default function Home() {
             </div>
           </div>
         </Card>
-        <div className="container bg-gray-tr bg-blur rounded-2xl p-4">
-          {result !== undefined ? <ResultCard props={result} /> : null}
-        </div>
+        {result !== undefined ?
+          <ResultCard props={result} />
+        : null}
       </section>
     </BG>
   );

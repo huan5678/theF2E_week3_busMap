@@ -6,13 +6,13 @@ module.exports = {
   theme: {
     extend: {
       spacing: {
-        "7.5": "1.875rem",
+        7.5: "1.875rem",
       },
       container: {
         center: true,
         padding: {
           default: "1rem",
-          'md': "1.875rem",
+          md: "1.875rem",
         },
       },
       colors: {
@@ -39,12 +39,31 @@ module.exports = {
       boxShadow: {
         DEFAULT: "0px 5px 4px rgba(0, 0, 0, 0.25)",
       },
+      fontFamily: {
+        sans: [
+          "Noto Sans TC",
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "Noto Sans",
+          "sans-serif",
+          "Apple Color Emoji",
+          "Segoe UI Emoji",
+          "Segoe UI Symbol",
+          "Noto Color Emoji",
+        ],
+      },
       fontSize: {
-        "h1": ["3rem", "4rem"],
-        "h2": ["2.25rem", "3.375rem"],
-        "h3": ["1.75rem", "2.25rem"],
-        "h4": ["1.25rem", "1.875rem"],
-        "h5": ["0.875rem", "1.25rem"],
+        h1: ["3rem", "4rem"],
+        h2: ["2.25rem", "3.375rem"],
+        h3: ["1.75rem", "2.25rem"],
+        h4: ["1.25rem", "1.875rem"],
+        h5: ["0.875rem", "1.25rem"],
       },
       variants: {
         extend: {

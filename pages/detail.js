@@ -37,11 +37,11 @@ function DynamicBusState(props) {
         <button
           type="button"
           className={`py-2 ${
-            props.roundTrip === "to"
+            props.roundTrip === 0
               ? "bg-primary text-white"
               : "bg-gray-dark text-black"
           } rounded-2xl grid place-content-center w-1/2`}
-          onClick={() => props.handleRoundTrip("to")}
+          onClick={() => props.handleRoundTrip(0)}
         >
           {props.query.startStop}
         </button>
@@ -49,11 +49,11 @@ function DynamicBusState(props) {
         <button
           type="button"
           className={`py-2 ${
-            props.roundTrip === "for"
+            props.roundTrip === 1
               ? "bg-primary text-white"
               : "bg-gray-dark text-black"
           } rounded-2xl grid place-content-center w-1/2`}
-          onClick={(e) => props.handleRoundTrip("for")}
+          onClick={(e) => props.handleRoundTrip(1)}
         >
           {props.query.endStop}
         </button>
@@ -77,10 +77,69 @@ const router = useRouter();
 
   const { data: routeData, error: routeError } = useSWR(Route(query.name, query.city), fetchData);
 
-  const {data: operatorData, error: operatorError } = useSWR(Operator(query.city), fetchData);
+  const { data: operatorData, error: operatorError } = useSWR(Operator(query.city), fetchData);
+  
+  const { data: scheduleData, error: scheduleError } = useSWR(Schedule(query.name, query.city), fetchData);
 
-  const [operatorInfo, setOperatorInfo] = useState([]);
+  const [operatorInfo, setOperatorInfo] = useState({});
 
+  const [frequency, setFrequency] = useState({
+    NormalPeakMaxHeadwayMins: 0,
+    NormalPeakMinHeadwayMins: 0,
+    NormalPeakOffMaxHeadwayMins: 0,
+    NormalPeakOffMinHeadwayMins: 0,
+    HolidayPeakMaxHeadwayMins: 0,
+    HolidayPeakMinHeadwayMins: 0,
+    HolidayPeakOffMaxHeadwayMins: 0,
+    HolidayPeakOffMinHeadwayMins: 0,
+  });
+
+  const calcFrequency = () => {
+    let frequencyNormalMaxHeadwayMins = [];
+    let frequencyNormalMinHeadwayMins = [];
+    let frequencyHolidayMaxHeadwayMins = [];
+    let frequencyHolidayMinHeadwayMins = [];
+
+    if (scheduleData === undefined || scheduleData[0].Frequencys === undefined) {
+      return;
+    } else {
+      scheduleData[0].Frequencys.forEach((freq) => {
+          if (
+            freq.ServiceDay.Sunday !== 1 ||
+            freq.ServiceDay.Saturday !== 1
+          ) {
+            frequencyNormalMaxHeadwayMins.push(freq.MaxHeadwayMins);
+            frequencyNormalMinHeadwayMins.push(freq.MinHeadwayMins);
+          } else {
+            frequencyHolidayMaxHeadwayMins.push(freq.MaxHeadwayMins);
+            frequencyHolidayMinHeadwayMins.push(freq.MinHeadwayMins);
+          }
+        });
+    }
+
+    const normalPeakMaxHeadwayMins = Math.min(...frequencyNormalMaxHeadwayMins);
+    const normalPeakMinHeadwayMins = Math.min(...frequencyNormalMinHeadwayMins);
+    const normalPeakOffMaxHeadwayMins = Math.max(...frequencyNormalMaxHeadwayMins);
+    const normalPeakOffMinHeadwayMins = Math.max(...frequencyNormalMinHeadwayMins);
+
+    const holidayPeakMaxHeadwayMins = Math.min(...frequencyHolidayMaxHeadwayMins);
+    const holidayPeakMinHeadwayMins = Math.min(...frequencyHolidayMinHeadwayMins);
+    const holidayPeakOffMaxHeadwayMins = Math.max(...frequencyHolidayMaxHeadwayMins);
+    const holidayPeakOffMinHeadwayMins = Math.max(...frequencyHolidayMinHeadwayMins);
+
+
+    setFrequency({
+      NormalPeakMaxHeadwayMins: normalPeakMaxHeadwayMins,
+      NormalPeakMinHeadwayMins: normalPeakMinHeadwayMins,
+      NormalPeakOffMaxHeadwayMins: normalPeakOffMaxHeadwayMins,
+      NormalPeakOffMinHeadwayMins: normalPeakOffMinHeadwayMins,
+      HolidayPeakMaxHeadwayMins: holidayPeakMaxHeadwayMins,
+      HolidayPeakMinHeadwayMins: holidayPeakMinHeadwayMins,
+      HolidayPeakOffMaxHeadwayMins: holidayPeakOffMaxHeadwayMins,
+      HolidayPeakOffMinHeadwayMins: holidayPeakOffMinHeadwayMins,
+    });
+
+  };
 
   const calcOperator = () => {
     let resultArr = [];
@@ -96,35 +155,105 @@ const router = useRouter();
   
   useEffect(() => {
     calcOperator();
+    calcFrequency();
+  }, []);
+  
+  useEffect(() => {
     console.log(routeData);
     console.log(operatorData);
     console.log(operatorInfo);
-  }, [routeData, operatorData]);
+    console.log(scheduleData);
+    console.log(frequency);
+  },[routeData, operatorData, scheduleData, operatorInfo]);
 
-  return operatorInfo === undefined || operatorInfo.length === 0 ? null : (
+  return operatorInfo[0] === undefined || operatorInfo.length === 0 ? null : (
     <div className="container px-4">
       <div className="flex flex-wrap justify-between items-center gap-4">
         <Card className="bg-white space-y-3 w-full">
           <span className="inline-block rounded-2xl bg-yellow text-primary py-1 px-3 text-h5">
             公車資訊
           </span>
-          <h2 className="font-bold">{ operatorInfo[0].DepartureStopNameZh}-{operatorInfo[0].DestinationStopNameZh}</h2>
-          <p className="flex">
+          <h2 className="font-bold space-x-1">
+            <span>{routeData[0].DepartureStopNameZh}</span>
+            <span> - </span>
+            <span>{routeData[0].DestinationStopNameZh}</span>
+          </h2>
+          <p className="flex gap-1">
             <Bus className="fill-current" />
-            {operatorInfo[0].OperatorName.Zh_tw}
-            {operatorInfo[0].OperatorPhone}
+            <span className="font-bold">
+              {operatorInfo[0].OperatorName.Zh_tw}
+            </span>
+            <span>{operatorInfo[0].OperatorPhone}</span>
           </p>
         </Card>
         <Card className="bg-white space-y-3 w-full">
           <span className="inline-block rounded-2xl bg-yellow text-primary py-1 px-3 text-h5">
             票價資訊
           </span>
-          <h2 className="font-bold">
-            收費方式
+          <div className="flex gap-1">
+            <h2 className="font-bold">收費方式：</h2>
             <span className="font-normal">
-              {operatorInfo[0].TicketPriceDescriptionZh}
+              {routeData[0].TicketPriceDescriptionZh}
             </span>
-          </h2>
+          </div>
+        </Card>
+        <Card className="bg-white space-y-3 w-full">
+          <span className="inline-block rounded-2xl bg-yellow text-primary py-1 px-3 text-h5">
+            平日發車資訊
+          </span>
+          <ul>
+            <li className="flex gap-1">
+              <span className="font-bold">首班車：</span>
+              <span className="font-normal">
+                {(routeData.SubRoutes[0].FirstBusTime).slice(0, 2)}:{(routeData.SubRoutes[0].FirstBusTime).slice(2, 4)}
+              </span>
+            </li>
+            <li className="flex gap-1">
+              <span className="font-bold">末班車：</span>
+              <span className="font-normal">
+                {(routeData.SubRoutes[0].LastBusTime).slice(0, 2)}:{(routeData.SubRoutes[0].LastBusTime).slice(2, 4)}
+              </span>
+            </li>
+            <li className="flex gap-1">
+              <span className="font-bold">尖峰班距：</span>
+              <span className="font-normal"></span>
+              <span className="font-normal">分</span>
+            </li>
+            <li className="flex gap-1">
+              <span className="font-bold">離峰班距：</span>
+              <span className="font-normal"></span>
+              <span className="font-normal">分</span>
+            </li>
+          </ul>
+        </Card>
+        <Card className="bg-white space-y-3 w-full">
+          <span className="inline-block rounded-2xl bg-yellow text-primary py-1 px-3 text-h5">
+            假日發車資訊
+          </span>
+          <ul>
+            <li className="flex gap-1">
+              <span className="font-bold">首班車：</span>
+              <span className="font-normal">
+                {(routeData.SubRoutes[0].HolidayFirstBusTime).slice(0,2)}:{(routeData.SubRoutes[0].HolidayFirstBusTime).slice(2,4)}
+              </span>
+            </li>
+            <li className="flex gap-1">
+              <span className="font-bold">末班車：</span>
+              <span className="font-normal">
+                {(routeData.SubRoutes[0].HolidayLastBusTime).slice(0,2)}:{(routeData.SubRoutes[0].HolidayLastBusTime).slice(2,4)}
+              </span>
+            </li>
+            <li className="flex gap-1">
+              <span className="font-bold">尖峰班距：</span>
+              <span className="font-normal"></span>
+              <span className="font-normal">分</span>
+            </li>
+            <li className="flex gap-1">
+              <span className="font-bold">離峰班距：</span>
+              <span className="font-normal"></span>
+              <span className="font-normal">分</span>
+            </li>
+          </ul>
         </Card>
       </div>
     </div>
@@ -153,7 +282,7 @@ const Detail = () => {
 
 
 
-  const [roundTrip, setRoundTrip] = useState("to");
+  const [roundTrip, setRoundTrip] = useState(1);
 
   const [result, setResult] = useState([]);
 
